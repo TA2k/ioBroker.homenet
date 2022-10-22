@@ -1,0 +1,104 @@
+{
+  "common": {
+    "name": "homenet",
+    "version": "0.0.1",
+    "news": {
+      "0.0.1": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung",
+        "ru": "Начальная версия",
+        "pt": "lançamento inicial",
+        "nl": "Eerste uitgave",
+        "fr": "Première version",
+        "it": "Versione iniziale",
+        "es": "Versión inicial",
+        "pl": "Pierwsze wydanie",
+        "zh-cn": "首次出版"
+      }
+    },
+    "title": "Bauknecht Home Net",
+    "titleLang": {
+      "en": "Bauknecht Home Net",
+      "de": "Bauknecht Home Net",
+      "ru": "Баукнехт Home Net",
+      "pt": "Bauknecht Home Net",
+      "nl": "Bauknecht Home Net",
+      "fr": "Bauknecht Accueil.net",
+      "it": "Bauknecht Home Net",
+      "es": "Bauknecht Home Net",
+      "pl": "Strona główna Bauknecht",
+      "zh-cn": "Bauknecht Home Net"
+    },
+    "desc": {
+      "en": "Adapter for Bauknecht Home Net",
+      "de": "Adapter für Bauknecht Home Net",
+      "ru": "Адаптер для Bauknecht Home Net",
+      "pt": "Adaptador para Bauknecht Home Net",
+      "nl": "Adapter voor Bauknecht Thuisnet",
+      "fr": "Adaptateur pour Bauknecht Home Net",
+      "it": "Adattatore per Bauknecht Home Net",
+      "es": "Adaptador para Bauknecht Home Net",
+      "pl": "Adapter do Bauknecht Home Net",
+      "zh-cn": "Bauknecht 家庭网络适配器"
+    },
+    "authors": ["TA2k <tombox2020@gmail.com>"],
+    "keywords": ["Bauknecht", "Home Net"],
+    "license": "MIT",
+    "platform": "Javascript/Node.js",
+    "main": "main.js",
+    "icon": "homenet.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/TA2k/ioBroker.homenet/master/admin/homenet.png",
+    "readme": "https://github.com/TA2k/ioBroker.homenet/blob/master/README.md",
+    "loglevel": "info",
+    "mode": "daemon",
+    "type": "household",
+    "compact": true,
+    "connectionType": "cloud",
+    "dataSource": "poll",
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=3.3.22"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=5.2.28"
+      }
+    ]
+  },
+  "encryptedNative": ["password"],
+  "protectedNative": ["password"],
+  "native": {
+    "username": "",
+    "password": "",
+    "interval": 30
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Device or service connected",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
+}
