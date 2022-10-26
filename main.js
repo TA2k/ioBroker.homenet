@@ -8,7 +8,7 @@
 // you need to create an adapter
 const utils = require("@iobroker/adapter-core");
 const axios = require("axios").default;
-const qs = require("qs");
+
 const Json2iob = require("./lib/json2iob");
 
 // Load your modules here, e.g.:
@@ -123,44 +123,55 @@ class Homenet extends utils.Adapter {
     })
       .then(async (res) => {
         this.log.debug(JSON.stringify(res.data));
+
         //this.log.info(`Found ${res.data} devices`);
-        for (const device of res.data) {
-          const id = device.applianceId;
+        const locations = res.data[this.session.accountId];
+        for (const location in locations) {
+          for (const device of locations[location]) {
+            const id = device.SAID;
 
-          this.deviceArray.push(id);
-          const name = device.name;
+            this.deviceArray.push(id);
+            const name = device.APPLIANCE_NAME + " " + device.CATEGORY_NAME;
 
-          await this.setObjectNotExistsAsync(id, {
-            type: "device",
-            common: {
-              name: name,
-            },
-            native: {},
-          });
-          await this.setObjectNotExistsAsync(id + ".remote", {
-            type: "channel",
-            common: {
-              name: "Remote Controls",
-            },
-            native: {},
-          });
-
-          const remoteArray = [{ command: "Refresh", name: "True = Refresh" }];
-          remoteArray.forEach((remote) => {
-            this.setObjectNotExists(id + ".remote." + remote.command, {
-              type: "state",
+            await this.setObjectNotExistsAsync(id, {
+              type: "device",
               common: {
-                name: remote.name || "",
-                type: remote.type || "boolean",
-                role: remote.role || "boolean",
-                def: remote.def || false,
-                write: true,
-                read: true,
+                name: name,
               },
               native: {},
             });
-          });
-          this.json2iob.parse(id, device, { forceIndex: true });
+            await this.setObjectNotExistsAsync(id + ".remote", {
+              type: "channel",
+              common: {
+                name: "Remote Controls",
+              },
+              native: {},
+            });
+
+            const remoteArray = [{ command: "Refresh", name: "True = Refresh" }];
+            remoteArray.forEach((remote) => {
+              this.setObjectNotExists(id + ".remote." + remote.command, {
+                type: "state",
+                common: {
+                  name: remote.name || "",
+                  type: remote.type || "boolean",
+                  role: remote.role || "boolean",
+                  def: remote.def || false,
+                  write: true,
+                  read: true,
+                },
+                native: {},
+              });
+            });
+            await this.setObjectNotExistsAsync(id + ".general", {
+              type: "channel",
+              common: {
+                name: "General Information",
+              },
+              native: {},
+            });
+            this.json2iob.parse(id + ".general", device, { forceIndex: true });
+          }
         }
       })
       .catch((error) => {
@@ -170,60 +181,83 @@ class Homenet extends utils.Adapter {
   }
 
   async updateDevices() {
-    const statusArray = [];
+    const statusArray = [
+      {
+        path: "status",
+        url: "https://prod-api.whrcloud.eu/api/v1/appliance/$id",
+        desc: "Status of the device",
+      },
+    ];
+    for (const id of this.deviceArray) {
+      for (const element of statusArray) {
+        const url = element.url.replace("$id", id);
 
-    for (const element of statusArray) {
-      // const url = element.url.replace("$id", id);
-
-      await this.requestClient({
-        method: element.method || "get",
-        url: element.url,
-      })
-        .then(async (res) => {
-          this.log.debug(JSON.stringify(res.data));
-          if (!res.data) {
-            return;
-          }
-          const data = res.data;
-
-          const forceIndex = true;
-          const preferedArrayName = null;
-
-          this.json2iob.parse(element.path, data, {
-            forceIndex: forceIndex,
-            preferedArrayName: preferedArrayName,
-            channelName: element.desc,
-          });
-          await this.setObjectNotExistsAsync(element.path + ".json", {
-            type: "state",
-            common: {
-              name: "Raw JSON",
-              write: false,
-              read: true,
-              type: "string",
-              role: "json",
-            },
-            native: {},
-          });
-          this.setState(element.path + ".json", JSON.stringify(data), true);
+        await this.requestClient({
+          method: element.method || "get",
+          url: url,
+          headers: {
+            Host: "prod-api.whrcloud.eu",
+            "content-type": "application/json",
+            authorization: "Bearer " + this.session.access_token,
+            accept: "*/*",
+            "wp-client-appname": "BAUKNECHT",
+            "wp-client-platform": "IOS",
+            "wp-client-region": "EMEA",
+            "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
+            "wp-client-country": "DE",
+            "wp-client-language": "ger",
+            "application-brand": "BAUKNECHT",
+            "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
+            "wp-client-brand": "BAUKNECHT",
+          },
         })
-        .catch((error) => {
-          if (error.response) {
-            if (error.response.status === 401) {
-              error.response && this.log.debug(JSON.stringify(error.response.data));
-              this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
-              this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
-              this.refreshTokenTimeout = setTimeout(() => {
-                this.refreshToken();
-              }, 1000 * 60);
-
+          .then(async (res) => {
+            this.log.debug(JSON.stringify(res.data));
+            if (!res.data) {
               return;
             }
-          }
-          this.log.error(element.url);
-          this.log.error(error);
-          error.response && this.log.error(JSON.stringify(error.response.data));
-        });
+            const data = res.data;
+
+            const forceIndex = true;
+            const preferedArrayName = null;
+
+            this.json2iob.parse(id + "." + element.path, data, {
+              forceIndex: forceIndex,
+              write: true,
+              preferedArrayName: preferedArrayName,
+              channelName: element.desc,
+            });
+            // await this.setObjectNotExistsAsync(element.path + ".json", {
+            //   type: "state",
+            //   common: {
+            //     name: "Raw JSON",
+            //     write: false,
+            //     read: true,
+            //     type: "string",
+            //     role: "json",
+            //   },
+            //   native: {},
+            // });
+            // this.setState(element.path + ".json", JSON.stringify(data), true);
+          })
+          .catch((error) => {
+            if (error.response) {
+              if (error.response.status === 401) {
+                error.response && this.log.debug(JSON.stringify(error.response.data));
+                this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
+                this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
+                this.refreshTokenTimeout = setTimeout(() => {
+                  this.refreshToken();
+                }, 1000 * 60);
+
+                return;
+              }
+            }
+            this.log.error(element.url);
+            this.log.error(error);
+            error.response && this.log.error(JSON.stringify(error.response.data));
+          });
+      }
     }
   }
 
@@ -291,15 +325,51 @@ class Homenet extends utils.Adapter {
     if (state) {
       if (!state.ack) {
         const deviceId = id.split(".")[2];
-        const command = id.split(".")[4];
-        if (id.split(".")[3] !== "remote") {
-          return;
-        }
+        const command = id.split(".")[5];
 
-        if (command === "Refresh") {
+        if (id.split(".")[4] === "Refresh") {
           this.updateDevices();
           return;
         }
+        const data = {
+          body: {},
+          header: {
+            command: "setAttributes",
+            said: deviceId,
+          },
+        };
+        data.body[command] = state.val;
+        await this.requestClient({
+          method: "post",
+          url: "https://prod-api.whrcloud.eu/api/v1/appliance/command",
+          headers: {
+            Host: "prod-api.whrcloud.eu",
+            "content-type": "application/json",
+            authorization: "Bearer " + this.session.access_token,
+            accept: "*/*",
+            "wp-client-appname": "BAUKNECHT",
+            "wp-client-platform": "IOS",
+            "wp-client-region": "EMEA",
+            "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
+            "wp-client-country": "DE",
+            "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
+            "wp-client-language": "ger",
+            "application-brand": "BAUKNECHT",
+            "wp-client-brand": "BAUKNECHT",
+          },
+          data: JSON.stringify(data),
+        })
+          .then((res) => {
+            this.log.info(JSON.stringify(res.data));
+          })
+          .catch(async (error) => {
+            this.log.error(error);
+            error.response && this.log.error(JSON.stringify(error.response.data));
+          });
+        this.refreshTimeout = setTimeout(async () => {
+          this.log.info("Update devices");
+          await this.updateDevices();
+        }, 10 * 1000);
       }
     }
   }

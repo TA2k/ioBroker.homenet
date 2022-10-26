@@ -21,15 +21,17 @@ Die Home net Mail und Passwort eingeben.
 
 ## Steuern
 
+Werte können direkt unter homenet.0.id.status.xxx.value gesetzt werden
+
 ## Diskussion und Fragen
 
-<https://forum.iobroker.net/topic/>
+<https://forum.iobroker.net/topic/59365/test-adapter-bauknecht-home-net>
 
 ## Changelog
 
 ### 0.0.1
 
--   (TA2k) initial release
+- (TA2k) initial release
 
 ## License
 
