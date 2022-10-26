@@ -53,7 +53,7 @@ class Homenet extends utils.Adapter {
     this.session = {};
     this.subscribeStates("*");
 
-    this.log.info("Login to eBike Connect");
+    this.log.info("Login to Home Net");
     await this.login();
     if (this.session.access_token) {
       await this.getDeviceList();
@@ -127,6 +127,7 @@ class Homenet extends utils.Adapter {
         //this.log.info(`Found ${res.data} devices`);
         const locations = res.data[this.session.accountId];
         for (const location in locations) {
+          this.log.info(`Found ${locations[location].length} devices in location ${location}`);
           for (const device of locations[location]) {
             const id = device.SAID;
 
