@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "homenet",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "news": {
-      "0.0.1": {
+      "0.0.2": {
         "en": "initial release",
         "de": "Erstveröffentlichung",
         "ru": "Начальная версия",
@@ -16,7 +16,6 @@
         "zh-cn": "首次出版"
       }
     },
-    "title": "Bauknecht Home Net",
     "titleLang": {
       "en": "Bauknecht Home Net",
       "de": "Bauknecht Home Net",
