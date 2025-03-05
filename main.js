@@ -29,7 +29,21 @@ class Homenet extends utils.Adapter {
     this.deviceArray = [];
 
     this.json2iob = new Json2iob(this);
-    this.requestClient = axios.create();
+
+    this.requestClient = axios.create({
+      headers: {
+        accept: "*/*",
+        "wp-client-appname": "BAUKNECHT",
+        "wp-client-platform": "IOS",
+        "wp-client-region": "EMEA",
+        "accept-language": "de-DE;q=1.0",
+        "wp-client-country": "DE",
+        "wp-client-language": "ger",
+        "application-brand": "BAUKNECHT",
+        "user-agent": "BKT - Store/7.0.4 (com.bauknecht.blive; build:1; iOS 15.8.3) Alamofire/5.9.1",
+        "wp-client-brand": "BAUKNECHT",
+      },
+    });
   }
 
   /**
@@ -62,33 +76,51 @@ class Homenet extends utils.Adapter {
         await this.updateDevices();
       }, this.config.interval * 60 * 1000);
     }
+    const expires = this.session.expires_in - 100 || 3500;
     this.refreshTokenInterval = setInterval(() => {
       this.refreshToken();
-    }, this.session.expires_in * 1000);
+    }, expires * 1000);
   }
   async login() {
+    const loginSession = await this.requestClient({
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "https://prod-api.whrcloud.eu/oauth/token",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      data: {
+        client_id: "bauknecht_emea_ios_v1",
+        client_secret: "ULGPmG6ovWSe-5kEkPXNmvA20XpiC2zbVY9Qov941pDAT4mCaZoV-O_esMCiZ07R",
+        grant_type: "client_credentials",
+      },
+    })
+      .then((res) => {
+        this.log.debug(JSON.stringify(res.data));
+        return res.data;
+      })
+      .catch((error) => {
+        this.log.error(error);
+        error.response && this.log.error(JSON.stringify(error.response.data));
+      });
+
     await this.requestClient({
       method: "post",
       url: "https://prod-api.whrcloud.eu/oauth/token",
       headers: {
-        "content-type": "application/x-www-form-urlencoded",
-        accept: "*/*",
-        "wp-client-appname": "BAUKNECHT",
-        "wp-client-platform": "IOS",
-        "wp-client-region": "EMEA",
-        "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
-        "wp-client-country": "DE",
-        "wp-client-language": "ger",
-        "application-brand": "BAUKNECHT",
-        "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
-        "wp-client-brand": "BAUKNECHT",
+        Authorization: "Bearer " + loginSession.access_token,
+
+        Connection: "keep-alive",
       },
-      data:
-        "client_id=bauknecht_ios_emea&client_secret=zdiScmLWIcTJM8eIXfIzKvaMNI5l7c85kUs-piFGBUv3GnkFQLCmXgF9AsRpaQXSgcC4iknrl3sh7UrTzGpQStv0z1MuOoindzAmMxnWP2FJssrAcsQolTLP6Kz0rnrPp3Z2d8btNuPy0wUkRYZv4oYSMMEm4YtpwTj_lBdVzVgQMUd-phY18E__v4wK44TE4EUpiWodTjrUq5yF8i9KInHUfhazC_pvQ0PZGnF70P7uhQbmVs3mLb0GmhR17mFC_nwitLJVl_OMFgg_IIPF79YRoCVmnkZeZ8rjp7ogrOT4UdgU3bQk0KFlRtHVU3kvJRH7wwVGFto0DsVtOgki7g&grant_type=password&password=" +
-        this.config.password +
-        "&username=" +
-        this.config.username +
-        "&wp-client-brand=BAUKNECHT&wp-client-region=EMEA",
+      data: {
+        client_id: "bauknecht_emea_ios_v1",
+        client_secret: "ULGPmG6ovWSe-5kEkPXNmvA20XpiC2zbVY9Qov941pDAT4mCaZoV-O_esMCiZ07R",
+        grant_type: "password",
+        password: this.config.password,
+        username: this.config.username,
+        "wp-client-brand": "BAUKNECHT",
+        "wp-client-region": "EMEA",
+      },
     })
       .then((res) => {
         this.log.debug(JSON.stringify(res.data));
@@ -104,21 +136,10 @@ class Homenet extends utils.Adapter {
   async getDeviceList() {
     await this.requestClient({
       method: "get",
-      url: "https://prod-api.whrcloud.eu/api/v2/appliance/all/account/" + this.session.accountId,
+      url: "https://prod-api.whrcloud.eu/api/v3/appliance/all/account/" + this.session.accountId,
       headers: {
-        Host: "prod-api.whrcloud.eu",
         "content-type": "application/json",
         authorization: "Bearer " + this.session.access_token,
-        accept: "*/*",
-        "wp-client-appname": "BAUKNECHT",
-        "wp-client-platform": "IOS",
-        "wp-client-region": "EMEA",
-        "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
-        "wp-client-country": "DE",
-        "wp-client-language": "ger",
-        "application-brand": "BAUKNECHT",
-        "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
-        "wp-client-brand": "BAUKNECHT",
       },
     })
       .then(async (res) => {
@@ -200,16 +221,6 @@ class Homenet extends utils.Adapter {
             Host: "prod-api.whrcloud.eu",
             "content-type": "application/json",
             authorization: "Bearer " + this.session.access_token,
-            accept: "*/*",
-            "wp-client-appname": "BAUKNECHT",
-            "wp-client-platform": "IOS",
-            "wp-client-region": "EMEA",
-            "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
-            "wp-client-country": "DE",
-            "wp-client-language": "ger",
-            "application-brand": "BAUKNECHT",
-            "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
-            "wp-client-brand": "BAUKNECHT",
           },
         })
           .then(async (res) => {
@@ -270,21 +281,16 @@ class Homenet extends utils.Adapter {
       url: "https://prod-api.whrcloud.eu/oauth/token",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
-        accept: "*/*",
-        "wp-client-appname": "BAUKNECHT",
-        "wp-client-platform": "IOS",
-        "wp-client-region": "EMEA",
-        "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
-        "wp-client-country": "DE",
-        "wp-client-language": "ger",
-        "application-brand": "BAUKNECHT",
-        "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
-        "wp-client-brand": "BAUKNECHT",
       },
-      data:
-        "client_id=bauknecht_ios_emea&client_secret=zdiScmLWIcTJM8eIXfIzKvaMNI5l7c85kUs-piFGBUv3GnkFQLCmXgF9AsRpaQXSgcC4iknrl3sh7UrTzGpQStv0z1MuOoindzAmMxnWP2FJssrAcsQolTLP6Kz0rnrPp3Z2d8btNuPy0wUkRYZv4oYSMMEm4YtpwTj_lBdVzVgQMUd-phY18E__v4wK44TE4EUpiWodTjrUq5yF8i9KInHUfhazC_pvQ0PZGnF70P7uhQbmVs3mLb0GmhR17mFC_nwitLJVl_OMFgg_IIPF79YRoCVmnkZeZ8rjp7ogrOT4UdgU3bQk0KFlRtHVU3kvJRH7wwVGFto0DsVtOgki7g&grant_type=refresh_token&refresh_token=" +
-        +this.session.refresh_token +
-        "&wp-client-brand=BAUKNECHT&wp-client-region=EMEA",
+
+      data: {
+        client_id: "bauknecht_emea_ios_v1",
+        client_secret: "ULGPmG6ovWSe-5kEkPXNmvA20XpiC2zbVY9Qov941pDAT4mCaZoV-O_esMCiZ07R",
+        grant_type: "refresh_token",
+        refresh_token: this.session.refresh_token,
+        "wp-client-brand": "BAUKNECHT",
+        "wp-client-region": "EMEA",
+      },
     })
       .then((res) => {
         this.log.debug(JSON.stringify(res.data));
@@ -295,7 +301,7 @@ class Homenet extends utils.Adapter {
       .catch(async (error) => {
         this.log.error(error);
         error.response && this.log.error(JSON.stringify(error.response.data));
-        this.setStateAsync("info.connection", false, true);
+        this.setState("info.connection", false, true);
       });
   }
 
