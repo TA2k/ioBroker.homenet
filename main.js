@@ -75,11 +75,11 @@ class Homenet extends utils.Adapter {
       this.updateInterval = setInterval(async () => {
         await this.updateDevices();
       }, this.config.interval * 60 * 1000);
+      const expires = this.session.expires_in - 100 || 3500;
+      this.refreshTokenInterval = setInterval(() => {
+        this.refreshToken();
+      }, expires * 1000);
     }
-    const expires = this.session.expires_in - 100 || 3500;
-    this.refreshTokenInterval = setInterval(() => {
-      this.refreshToken();
-    }, expires * 1000);
   }
   async login() {
     const loginSession = await this.requestClient({
@@ -109,7 +109,7 @@ class Homenet extends utils.Adapter {
       url: "https://prod-api.whrcloud.eu/oauth/token",
       headers: {
         Authorization: "Bearer " + loginSession.access_token,
-
+        "Content-Type": "application/x-www-form-urlencoded",
         Connection: "keep-alive",
       },
       data: {
@@ -144,25 +144,31 @@ class Homenet extends utils.Adapter {
     })
       .then(async (res) => {
         this.log.debug(JSON.stringify(res.data));
-
         //this.log.info(`Found ${res.data} devices`);
-        const locations = res.data[this.session.accountId];
-        for (const location in locations) {
-          this.log.info(`Found ${locations[location].length} devices in location ${location}`);
-          for (const device of locations[location]) {
+        const locationsObject = res.data[this.session.accountId];
+        for (const location in locationsObject) {
+          const locationObject = locationsObject[location];
+          const tsAppliance = locationObject.tsAppliance;
+          const legacyAppliance = locationObject.legacyAppliance;
+          this.log.info(
+            `Found ${tsAppliance.length} devices and ${legacyAppliance.length} legacy devices in location ${location}`,
+          );
+          const mergedAppliance = tsAppliance.concat(legacyAppliance);
+
+          for (const device of mergedAppliance) {
             const id = device.SAID;
 
             this.deviceArray.push(id);
             const name = device.APPLIANCE_NAME + " " + device.CATEGORY_NAME;
 
-            await this.setObjectNotExistsAsync(id, {
+            await this.extendObject(id, {
               type: "device",
               common: {
                 name: name,
               },
               native: {},
             });
-            await this.setObjectNotExistsAsync(id + ".remote", {
+            await this.extendObject(id + ".remote", {
               type: "channel",
               common: {
                 name: "Remote Controls",
@@ -172,20 +178,20 @@ class Homenet extends utils.Adapter {
 
             const remoteArray = [{ command: "Refresh", name: "True = Refresh" }];
             remoteArray.forEach((remote) => {
-              this.setObjectNotExists(id + ".remote." + remote.command, {
+              this.extendObject(id + ".remote." + remote.command, {
                 type: "state",
                 common: {
                   name: remote.name || "",
                   type: remote.type || "boolean",
                   role: remote.role || "boolean",
-                  def: remote.def || false,
+                  def: remote.def == null ? false : remote.def,
                   write: true,
                   read: true,
                 },
                 native: {},
               });
             });
-            await this.setObjectNotExistsAsync(id + ".general", {
+            await this.extendObject(id + ".general", {
               type: "channel",
               common: {
                 name: "General Information",
@@ -355,15 +361,6 @@ class Homenet extends utils.Adapter {
             "content-type": "application/json",
             authorization: "Bearer " + this.session.access_token,
             accept: "*/*",
-            "wp-client-appname": "BAUKNECHT",
-            "wp-client-platform": "IOS",
-            "wp-client-region": "EMEA",
-            "accept-language": "de-DE;q=1.0, uk-DE;q=0.9, en-DE;q=0.8",
-            "wp-client-country": "DE",
-            "user-agent": "BKT - Store/6.3.0 (com.bauknecht.blive; build:6.3.0.1; iOS 14.8.0) Alamofire/5.5.0",
-            "wp-client-language": "ger",
-            "application-brand": "BAUKNECHT",
-            "wp-client-brand": "BAUKNECHT",
           },
           data: JSON.stringify(data),
         })
