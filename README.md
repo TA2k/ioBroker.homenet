@@ -29,7 +29,7 @@ Werte können direkt unter homenet.0.id.status.xxx.value gesetzt werden
 
 ## Changelog
 
-### 0.0.1
+### 0.0.2
 
 - (TA2k) initial release
 
