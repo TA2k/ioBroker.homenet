@@ -1,6 +1,6 @@
 {
   "name": "iobroker.homenet",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Adapter for Bauknecht Home Net",
   "author": {
     "name": "TA2k",

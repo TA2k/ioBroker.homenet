@@ -1,8 +1,20 @@
 {
   "common": {
     "name": "homenet",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "news": {
+      "0.0.3": {
+        "en": "fixed login flow",
+        "de": "Fehlerhaften Anmeldeprozess behoben",
+        "ru": "исправлен процесс входа в систему",
+        "pt": "fluxo de login corrigido",
+        "nl": "vaste loginstroom",
+        "fr": "flux de connexion fixe",
+        "it": "flusso di accesso fisso",
+        "es": "flujo de inicio de sesión fijo",
+        "pl": "naprawiony przepływ logowania",
+        "zh-cn": "固定登录流程"
+      },
       "0.0.2": {
         "en": "initial release",
         "de": "Erstveröffentlichung",
