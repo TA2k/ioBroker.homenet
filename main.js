@@ -9,7 +9,7 @@
 const utils = require("@iobroker/adapter-core");
 const axios = require("axios").default;
 
-const Json2iob = require("./lib/json2iob");
+const Json2iob = require("json2iob");
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
@@ -313,6 +313,7 @@ class Homenet extends utils.Adapter {
       this.refreshTokenInterval && clearInterval(this.refreshTokenInterval);
       callback();
     } catch (e) {
+      this.log.error(e);
       callback();
     }
   }
