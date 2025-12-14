@@ -56,7 +56,6 @@
     "keywords": ["Bauknecht", "Home Net"],
     "license": "MIT",
     "platform": "Javascript/Node.js",
-    "main": "main.js",
     "icon": "homenet.png",
     "enabled": true,
     "extIcon": "https://raw.githubusercontent.com/TA2k/ioBroker.homenet/master/admin/homenet.png",
