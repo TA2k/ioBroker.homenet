@@ -12,7 +12,7 @@ const axios = require("axios").default;
 const Json2iob = require("json2iob");
 
 // Load your modules here, e.g.:
-// const fs = require("fs");
+// const fs = require("node:fs");
 
 class Homenet extends utils.Adapter {
   /**
