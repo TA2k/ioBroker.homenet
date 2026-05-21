@@ -29,6 +29,10 @@ Werte können direkt unter homenet.0.id.status.xxx.value gesetzt werden
 
 ## Changelog
 
+
+### **WORK IN PROGRESS**
+- (ioBroker-Bot) Adapter requires js-controller >= 6.0.11 now.
+
 ### 0.0.2
 
 - (TA2k) initial release
