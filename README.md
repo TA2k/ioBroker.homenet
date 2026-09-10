@@ -29,6 +29,9 @@ Werte können direkt unter homenet.0.id.status.xxx.value gesetzt werden
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+- (iobroker-bot) Adapter requires node.js >= 22 now.
+
 ### 0.0.2
 
 - (TA2k) initial release
